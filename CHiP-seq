@@ -1,0 +1,53 @@
+## 1 quality
+fastqc $file -o $OUTDIR/quality
+
+## 2 alignment
+(bowtie2 -x $INDEX -1 ${FASTQ[0]} -2 ${FASTQ[1]} --very-sensitive -k 2 -t -p 15 -S $OUTDIR/alignment/${CELL}_${COND}_${AB}_${i}_${OMIC}.sam) 2> $OUTDIR/alignment/${CELL}_${COND}_${AB}_${i}_${OMIC}_bt2_output.txt
+samtools view -@ 15 -bS $OUTDIR/alignment/${CELL}_${COND}_${AB}_${i}_${OMIC}.sam > $OUTDIR/alignment/${CELL}_${COND}_${AB}_${i}_${OMIC}.bam
+rm $OUTDIR/alignment/${CELL}_${COND}_${AB}_${i}_${OMIC}.sam
+samtools sort -o $OUTDIR/alignment/${CELL}_${COND}_${AB}_${i}_${OMIC}.sort.bam -@ 15 $OUTDIR/alignment/${CELL}_${COND}_${AB}_${i}_${OMIC}.bam
+mv $OUTDIR/alignment/${CELL}_${COND}_${AB}_${i}_${OMIC}.sort.bam $OUTDIR/alignment/${CELL}_${COND}_${AB}_${i}_${OMIC}.bam
+samtools index $OUTDIR/alignment/${CELL}_${COND}_${AB}_${i}_${OMIC}.bam
+
+## 3 filtering
+
+samtools view -H $BAM > $OUTDIR/${CELL}_${COND}_${AB}_${i}_${OMIC}_header.sam
+	## Getting the unmapped reads in a single bam
+samtools view -@ 10 -f4 $BAM | cat $OUTDIR/${CELL}_${COND}_${AB}_${i}_${OMIC}_header.sam - | samtools view -@ 10 -b - > $OUTDIR/${CELL}_${COND}_${AB}_${i}_${OMIC}_unmapped.bam
+	## Filtering read in chr MT, in blacklist and getting only mapped reads
+samtools idxstats $BAM | cut -f 1 | grep -v MT | xargs samtools view -b $BAM -@ 10 -F 4 | samtools view - -b -L $BLACKLIST -U $OUTDIR/${CELL}_${COND}_${AB}_${i}_${OMIC}_filtered.bam -o $OUTDIR/trash.bam
+rm $OUTDIR/${CELL}_${COND}_${AB}_${i}_${OMIC}_header.sam $OUTDIR/trash.bam
+	## Sorting filtered bam
+samtools sort -o $OUTDIR/${CELL}_${COND}_${AB}_${i}_${OMIC}_filtered.sort.bam -@ 10 $OUTDIR/${CELL}_${COND}_${AB}_${i}_${OMIC}_filtered.bam
+rm $OUTDIR/${CELL}_${COND}_${AB}_${i}_${OMIC}_filtered.bam
+samtools index $OUTDIR/${CELL}_${COND}_${AB}_${i}_${OMIC}_filtered.sort.bam
+	## Removing duplicated from bam
+samtools sort -@ 10 -n -o $OUTDIR/${CELL}_${COND}_${AB}_${i}_${OMIC}_namesort.bam $OUTDIR/${CELL}_${COND}_${AB}_${i}_${OMIC}_filtered.sort.bam
+samtools fixmate -m $OUTDIR/${CELL}_${COND}_${AB}_${i}_${OMIC}_namesort.bam $OUTDIR/${CELL}_${COND}_${AB}_${i}_${OMIC}_fixmate.bam
+samtools sort -@ 10 -o $OUTDIR/${CELL}_${COND}_${AB}_${i}_${OMIC}_positionsort.bam $OUTDIR/${CELL}_${COND}_${AB}_${i}_${OMIC}_fixmate.bam
+samtools markdup -r $OUTDIR/${CELL}_${COND}_${AB}_${i}_${OMIC}_positionsort.bam $OUTDIR/${CELL}_${COND}_${AB}_${i}_${OMIC}.markdup.bam
+samtools index $OUTDIR/${CELL}_${COND}_${AB}_${i}_${OMIC}.markdup.bam
+
+rm $OUTDIR/${CELL}_${COND}_${AB}_${i}_${OMIC}_namesort.bam $OUTDIR/${CELL}_${COND}_${AB}_${i}_${OMIC}_fixmate.bam $OUTDIR/${CELL}_${COND}_${AB}_${i}_${OMIC}_positionsort.bam
+
+## 4 coverage
+
+bamCoverage --binSize 10 -b $BAM -o $OUTDIR/coverage/${CELL}_${COND}_${AB}_${i}_${OMIC}.bw
+/home/bsc08/bsc08786/opt/bed_programs/bigWigToBedGraph $OUTDIR/coverage/${CELL}_${COND}_${AB}_${i}_${OMIC}.bw $OUTDIR/coverage/${CELL}_${COND}_${AB}_${i}_${OMIC}.bdg
+sed 's/^/chr/' $OUTDIR/coverage/${CELL}_${COND}_${AB}_${i}_${OMIC}.bdg > $OUTDIR/coverage/${CELL}_${COND}_${AB}_${i}_${OMIC}.bdg2
+/home/bsc08/bsc08786/opt/bed_programs/bedSort $OUTDIR/coverage/${CELL}_${COND}_${AB}_${i}_${OMIC}.bdg2 $OUTDIR/coverage/${CELL}_${COND}_${AB}_${i}_${OMIC}.bdg
+/home/bsc08/bsc08786/opt/bed_programs/bedGraphToBigWig $OUTDIR/coverage/${CELL}_${COND}_${AB}_${i}_${OMIC}.bdg $CHROMSIZES $OUTDIR/coverage/${CELL}_${COND}_${AB}_${i}_${OMIC}.bw
+rm $OUTDIR/coverage/${CELL}_${COND}_${AB}_${i}_${OMIC}.bdg $OUTDIR/coverage/${CELL}_${COND}_${AB}_${i}_${OMIC}.bdg2
+
+## 5 Quality Check
+
+for set in 1 2;
+	do {
+ 		sample=/home/asier/Desktop/PRACTICAS/ChIP-ATAC-CUT_analysis/HCT116_WTDMSO_H3K4me1_2_ChIP_${set}_201102_I66_V300074465_L1_G_50_ChIP_H3K4me1_HCT116_WT_DMSO_2BR_F_${set}.fq.gz;
+ 		echo "###### runing fastQC on set $set" ;
+ 		fastqc -t 6 ${sample} --format fastq \
+ 		-o /home/asier/Desktop/PRACTICAS/ChIP-ATAC-CUT_analysis/;
+ 
+ };done;
+ 
+
