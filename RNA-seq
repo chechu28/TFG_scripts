@@ -1,0 +1,179 @@
+
+## STAR index
+STAR --genomeDir /scratch/arafales/practicas/RNA-seq_analysis/star_results/star_index/ \
+--runThreadN 20 \
+--runMode genomeGenerate \
+--sjdbGTFfile /scratch/arafales/practicas/RNA-seq_analysis/anotation_gtf/Mus_musculus.GRCm38.100.gtf \
+--genomeFastaFiles (all fasta files)
+--sjdbOverhang 99 \
+--sjdbGTFtagExonParentTranscript transcript_id \
+--sjdbGTFtagExonParentGene gene_id
+
+
+## STAR genome
+STAR --genomeDir  /scratch/arafales/practicas/RNA-seq_analysis/star_results/star_index/ \
+--runThreadN 20 \
+--readFilesCommand zcat \
+--readFilesIn (reads files)
+--outFileNamePrefix /scratch/arafales/practicas/RNA-seq_analysis/star_results/star_mapping/prueba1.1 \
+--outFilterType BySJout \
+--outFilterMultimapNmax 20 \
+--alignSJoverhangMin 8 \
+--alignSJDBoverhangMin 1 \ 
+--outFilterMismatchNmax 999 \
+--outFilterMismatchNoverReadLmax 0.04 \
+--alignIntronMin 20 \
+--alignIntronMax 1000000 \
+--alignMatesGapMax 100000 | \
+samtools view -bS - > /scratch/arafales/practicas/RNA-seq_analysis/star_results/star_mapping/prueba1_1_output.bam 
+
+
+# FastQC
+
+
+data_path=(path hasta la data)
+output_path_fastqc=(carpeta optputs fastqc)
+
+sample=data_path/H1_primed_1_1_C_41_V300082424_L01_read_1.fq.gz
+fastqc -t 8 ${sample} --format fastq \
+-o output_path_fastqc
+		
+sample=data_path/H1_primed_1_2_C_41_V300082424_L01_read_2.fq.gz
+fastqc -t 8 ${sample} --format fastq \
+-o output_path_fastqc
+
+sample=data_path/H1_primed_2_1_D_42_V300074465_L04_read_1.fq.gz
+fastqc -t 8 ${sample} --format fastq \
+-o output_path_fastqc
+
+sample=data_path/H1_primed_2_2_D_42_V300074465_L04_read_2.fq.gz
+fastqc -t 8 ${sample} --format fastq \
+-o output_path_fastqc
+
+sample=data_path/H1_CDK8i_1_1_E_43_V300072671_L02_read_1.fq.gz
+fastqc -t 8 ${sample} --format fastq \
+-o output_path_fastqc
+
+sample=data_path/H1_CDK8i_1_2_E_43_V300072671_L02_read_2.fq.gz
+fastqc -t 8 ${sample} --format fastq \
+-o output_path_fastqc
+
+sample=data_path/H1_CDK8i_2_1_F_44_V300072671_L03_read_1.fq.gz
+fastqc -t 8 ${sample} --format fastq \
+-o output_path_fastqc
+
+
+sample=data_path/H1_CDK8i_2_2_F_44_V300072671_L03_read_2.fq.gz	
+fastqc -t 8 ${sample} --format fastq \
+-o output_path_fastqc
+
+# STAR
+
+### suponinendo que los indices estan creados ya 
+path_to_indexes=(path hasta los indices)
+output_path_STAR=(carpeta optputs STAR)
+
+
+STAR --genomeDir path_to_indexes \
+--runThreadN 20 \
+--readFilesCommand zcat \
+--readFilesIn data_path/H1_primed_1_1_C_41_V300082424_L01_read_1.fq.gz \
+data_path/H1_primed_1_2_C_41_V300082424_L01_read_2.fq.gz 
+--outFileNamePrefix output_path_STAR/output_SATR \
+--outFilterType BySJout \
+--outFilterMultimapNmax 20 \
+--alignSJoverhangMin 8 \
+--alignSJDBoverhangMin 1 \ 
+--outFilterMismatchNmax 999 \
+--outFilterMismatchNoverReadLmax 0.04 \
+--alignIntronMin 20 \
+--alignIntronMax 1000000 \
+--alignMatesGapMax 100000 | \
+samtools view -bS - > output_path_STAR/STAR_output_samtools_rep1.bam 
+
+
+STAR --genomeDir path_to_indexes \
+--runThreadN 20 \
+--readFilesCommand zcat \
+--readFilesIn data_path/H1_primed_2_1_D_42_V300074465_L04_read_1.fq.gz \
+data_path/H1_primed_2_2_D_42_V300074465_L04_read_2.fq.gz
+
+--outFileNamePrefix output_path_STAR/output_SATR \
+--outFilterType BySJout \
+--outFilterMultimapNmax 20 \
+--alignSJoverhangMin 8 \
+--alignSJDBoverhangMin 1 \ 
+--outFilterMismatchNmax 999 \
+--outFilterMismatchNoverReadLmax 0.04 \
+--alignIntronMin 20 \
+--alignIntronMax 1000000 \
+--alignMatesGapMax 100000 | \
+samtools view -bS - > output_path_STAR/STAR_output_samtools_rep2.bam 
+
+
+STAR --genomeDir path_to_indexes \
+--runThreadN 20 \
+--readFilesCommand zcat \
+--readFilesIn data_path/H1_CDK8i_1_1_E_43_V300072671_L02_read_1.fq.gz \
+data_path/H1_CDK8i_1_2_E_43_V300072671_L02_read_2.fq.gz
+
+--outFileNamePrefix output_path_STAR/output_SATR \
+--outFilterType BySJout \
+--outFilterMultimapNmax 20 \
+--alignSJoverhangMin 8 \
+--alignSJDBoverhangMin 1 \ 
+--outFilterMismatchNmax 999 \
+--outFilterMismatchNoverReadLmax 0.04 \
+--alignIntronMin 20 \
+--alignIntronMax 1000000 \
+--alignMatesGapMax 100000 | \
+samtools view -bS - > output_path_STAR/STAR_output_samtools_rep3.bam
+
+STAR --genomeDir path_to_indexes \
+--runThreadN 20 \
+--readFilesCommand zcat \
+--readFilesIn data_path/H1_CDK8i_2_1_F_44_V300072671_L03_read_.fq.gz \
+data_path/H1_CDK8i_2_2_F_44_V300072671_L03_read_2.fq.gz 
+
+--outFileNamePrefix output_path_STAR/output_SATR \
+--outFilterType BySJout \
+--outFilterMultimapNmax 20 \
+--alignSJoverhangMin 8 \
+--alignSJDBoverhangMin 1 \ 
+--outFilterMismatchNmax 999 \
+--outFilterMismatchNoverReadLmax 0.04 \
+--alignIntronMin 20 \
+--alignIntronMax 1000000 \
+--alignMatesGapMax 100000 | \
+samtools view -bS - > output_path_STAR/STAR_output_samtools_rep4.bam
+
+
+
+# FeatureCount
+
+path_to_gtf_files=(path hasta los GTF)
+output_path_featureCount=(carpeta optputs FeatureCount)
+
+featureCounts -a path_to_gtf_files/GTF_FILE \
+-p -B -C -T 20 \
+-o output_path_featureCount/STAR_output_samtools_primed_1.txt \
+output_path_STAR/STAR_output_samtools_rep1.bam  
+
+
+featureCounts -a path_to_gtf_files/GTF_FILE \
+-p -B -C -T 20 \
+-o output_path_featureCount/STAR_output_samtools_primed_2.txt \
+output_path_STAR/STAR_output_samtools_rep2.bam
+
+
+featureCounts -a path_to_gtf_files/GTF_FILE \
+-p -B -C -T 20 \
+-o output_path_featureCount/STAR_output_samtools_CDK8i_1.txt \
+output_path_STAR/STAR_output_samtools_rep3.bam  
+
+
+featureCounts -a path_to_gtf_files/GTF_FILE \
+-p -B -C -T 20 \
+-o output_path_featureCount/STAR_output_samtools_CDK8i_2.txt \
+output_path_STAR/STAR_output_samtools_rep4.bam
+
