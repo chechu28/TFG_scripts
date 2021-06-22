@@ -1,0 +1,121 @@
+
+#### Define paths
+outdir_path=(out_dir)
+Bowtie2_path=(path to bowtie)
+Index_path=(path to indexes)
+Digest_path=(path to digested genome)
+Format_data=FASTQ
+#### Hicup conf H1_primed_1_1_C_41_V300082424_L01_read_1.fq.gz.H1_primed_1_2_C_41_V300082424_L01_read_2.fq.gz
+
+#Directory to which output files should be
+#written (optional parameter)
+#Set to current working directory by default
+Outdir: outdirpath
+
+#Number of threads to use
+Threads: 20
+
+#Suppress progress updates (0: off, 1: on)
+#Quiet: 0
+
+#Retain intermediate pipeline files (0: off, 1: on)
+Keep: 0
+
+#Compress outputfiles (0: off, 1: on)
+Zip: 1
+
+#Path to the alignment program (Bowtie or Bowtie2)
+#Remember to include the executable Bowtie/Bowtie2 filename.
+#Note: ensure you specify the correct aligner i.e.
+#Bowtie when using Bowtie indices, or Bowtie2 when using Bowtie2 indices.
+#In the example below Bowtie2 is specified.
+Bowtie2: Bowtie2_path
+
+#Path to the reference genome indices
+#Remember to include the basename of the genome indices
+Index: Index_path
+
+#Path to the genome digest file produced by hicup_digester
+Digest: Digest_path
+
+#FASTQ format (valid formats: 'Sanger', 'Solexa_Illumina_1.0',
+
+#'Illumina_1.3' or 'Illumina_1.5'). If not specified, HiCUP will
+#try to determine the format automatically by analysing one of
+#the FASTQ files. All input FASTQ will assumed to be in that
+#format.
+Format: 
+
+#Maximum di-tag length (optional parameter)
+Longest: 800
+
+#Minimum di-tag length (optional parameter)
+Shortest: 150
+
+#FASTQ files to be analysed, placing paired files on adjacent lines
+(path)/H1_primed_1_1_C_41_V300082424_L01_read_1.fq.gz
+(path)/H1_primed_1_2_C_41_V300082424_L01_read_2.fq.gz
+
+
+#### RUN hicap
+
+#### get  of captured reads
+
+perl /home/asier/Desktop/PRACTICAS/PCHi-C_analysis/captured_reads/scripts/get_captured_reads --baits /home/asier/Desktop/PRACTICAS/PCHi-C_analysis/captured_reads/baits_coordinates_chr_start_end.txt /home/asier/Desktop/PRACTICAS/PCHi-C_analysis/Output/sample1_1_2.hicup.bam
+
+perl /home/asier/Desktop/PRACTICAS/PCHi-C_analysis/captured_reads/scripts/get_captured_reads --baits /home/asier/Desktop/PRACTICAS/PCHi-C_analysis/captured_reads/baits_coordinates_chr_start_end.txt /home/asier/Desktop/PRACTICAS/PCHi-C_analysis/Output/sample1_2_2.hicup.bam
+
+perl /home/asier/Desktop/PRACTICAS/PCHi-C_analysis/captured_reads/scripts/get_captured_reads --baits /home/asier/Desktop/PRACTICAS/PCHi-C_analysis/captured_reads/baits_coordinates_chr_start_end.txt /home/asier/Desktop/PRACTICAS/PCHi-C_analysis/Output/sample2_1_2.hicup.bam
+
+perl /home/asier/Desktop/PRACTICAS/PCHi-C_analysis/captured_reads/scripts/get_captured_reads --baits /home/asier/Desktop/PRACTICAS/PCHi-C_analysis/captured_reads/baits_coordinates_chr_start_end.txt /home/asier/Desktop/PRACTICAS/PCHi-C_analysis/Output/sample2_2_2.hicup.bam
+
+#### BAM to CHiCAGO 
+
+# to run create_baitmap_rmap.pl (solo 1 vez)
+
+
+cut -f 1,2,3,4 (path)/H1_primed_1_1_C_41_V300082424_L01_read_1.H1_primed_1_2_C_41_V300082424_L01_read_2.hicup.bam > (path)/primed_1_1.primed_1_2.baitmap
+
+
+perl (path)/create_baitmap_rmap.pl (path)/primed_1_1.primed_1_2.baitmap (path)/primed_1_1.primed_1_2.txt
+
+# to run makeDesignFiles.py (solo 1 vez)
+
+python2 /home/asier/Desktop/PRACTICAS/CHiCAGO_analysis/prepare_files/scripts/makeDesignFiles.py --designDir=/home/asier/Desktop/PRACTICAS/CHiCAGO_analysis/design-dir/ --rmapfile=/home/asier/Desktop/PRACTICAS/CHiCAGO_analysis/design-dir/Digest_Human_GRCh37_HindIII_None_22-56-09_08-03-2021.txt.rmap --baitmapfile=/home/asier/Desktop/PRACTICAS/CHiCAGO_analysis/design-dir/Digest_Human_GRCh37_HindIII_None_22-56-09_08-03-2021.txt.baitmap --outfilePrefix=/home/asier/Desktop/PRACTICAS/CHiCAGO_analysis/design-dir/output_design_file --minFragLen=150 --maxFragLen=40000 --maxLBrownEst=1500000 --binsize=20000 --removeb2b=True --removeAdjacent=True
+
+
+## bam2chicago.sh (x4)
+
+bash /home/asier/Desktop/PRACTICAS/CHiCAGO_analysis/prepare_files/scripts/bam2chicago.sh /home/asier/Desktop/PRACTICAS/PCHi-C_analysis/Output/sample1_1_2.hicup.captured.bam /home/asier/Desktop/PRACTICAS/CHiCAGO_analysis/design-dir/Digest_Human_GRCh37_92_HindIII_None_10-51-28_27-03-2020.txt.gz.baitmap /home/asier/Desktop/PRACTICAS/CHiCAGO_analysis/design-dir/Digest_Human_GRCh37_92_HindIII_None_10-51-28_27-03-2020.txt.gz.rmap /home/asier/Desktop/PRACTICAS/CHiCAGO_analysis/design-dir/output_dir_bam_to_chi
+
+
+## TO run chicago 
+
+Rscript /home/asier/Desktop/PRACTICAS/CHiCAGO_analysis/prepare_files/scripts/runChicago.R --design-dir /home/asier/Desktop/PRACTICAS/CHiCAGO_analysis/design-dir /home/asier/Desktop/PRACTICAS/CHiCAGO_analysis/design-dir/output_dir_bam_to_chi/output_dir_bam_to_chi.chinput /home/asier/Desktop/PRACTICAS/CHiCAGO_analysis/design-dir/chicago_output/output
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
